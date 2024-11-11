@@ -1,5 +1,11 @@
 # Simple Makefile for a Go project
 
+# Load environment variables from .env file
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 # Build the application
 all: build test
 
@@ -39,5 +45,21 @@ watch:
                 exit 1; \
             fi; \
         fi
+
+db-status:
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DB_NAME) go run github.com/pressly/goose/v3/cmd/goose@latest -dir=$(MIGRATION_DIR) status
+
+db-reset:
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DB_NAME) go run github.com/pressly/goose/v3/cmd/goose@latest -dir=$(MIGRATION_DIR) reset
+
+db-down:
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DB_NAME) go run github.com/pressly/goose/v3/cmd/goose@latest -dir=$(MIGRATION_DIR) down
+
+db-up:
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DB_NAME) go run github.com/pressly/goose/v3/cmd/goose@latest -dir=$(MIGRATION_DIR) up
+
+db-generate-migration:
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DB_NAME) go run github.com/pressly/goose/v3/cmd/goose@latest -dir=$(MIGRATION_DIR) create $(filter-out $@,$(MAKECMDGOALS)) sql
+
 
 .PHONY: all build run test clean watch
