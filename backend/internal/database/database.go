@@ -22,6 +22,8 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
 type service struct {
@@ -29,7 +31,7 @@ type service struct {
 }
 
 var (
-	dburl      = os.Getenv("BLUEPRINT_DB_URL")
+	dburl      = os.Getenv("DB_URL")
 	dbInstance *service
 )
 
@@ -110,4 +112,8 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", dburl)
 	return s.db.Close()
+}
+
+func (s *service) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	return s.db.ExecContext(ctx, query, args...)
 }
