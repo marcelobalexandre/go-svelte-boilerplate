@@ -24,6 +24,8 @@ type Service interface {
 	Close() error
 
 	Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+
+	QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row
 }
 
 type service struct {
@@ -116,4 +118,8 @@ func (s *service) Close() error {
 
 func (s *service) Exec(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return s.db.ExecContext(ctx, query, args...)
+}
+
+func (s *service) QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return s.db.QueryRowContext(ctx, query, args...)
 }

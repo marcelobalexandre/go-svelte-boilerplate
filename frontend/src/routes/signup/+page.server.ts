@@ -14,14 +14,14 @@ export const actions = {
 		});
 
 		if (response.ok) {
-			throw redirect(302, "/dashboard");
+			throw redirect(302, "/");
 		} else if (response.status === 422) {
 			const { errors }: { errors: Record<string, string> } =
 				await response.json();
 			return fail(422, { username, password, errors });
 		} else {
 			return fail(response.status, {
-				errorMessage: "An error occurred. Please try again.",
+				error: "An error occurred. Please try again.",
 			});
 		}
 	},

@@ -3,16 +3,16 @@
   import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
-  const inputColor = form?.errorMessage ? 'red' : undefined;
+  const inputColor = form?.error? 'red' : undefined;
 </script>
 
 <div class="flex items-center justify-center min-h-screen">
   <form method="POST" class="w-full max-w-sm p-6 rounded-lg shadow-lg bg-gray-800">
     <h2 class="text-2xl font-bold text-center">Log In</h2>
 
-    {#if form?.errorMessage}
+    {#if form?.error}
       <Alert color="red" rounded={false} class="mt-4 border-t-4 dark:bg-gray-700">
-        {form.errorMessage}
+        {form.error}
       </Alert>
     {/if}
       

@@ -2,7 +2,7 @@ import { fail, redirect } from "@sveltejs/kit";
 import type { Actions } from "./$types";
 
 export const actions = {
-	default: async ({ fetch, request }) => {
+	default: async ({ cookies, fetch, request }) => {
 		const data = await request.formData();
 		const username = data.get("username");
 		const password = data.get("password");
@@ -14,13 +14,16 @@ export const actions = {
 		});
 
 		if (response.ok) {
-			throw redirect(302, "/dashboard");
+			const { token }: { token: string } = await response.json();
+			cookies.set("token", token, { path: "/" });
+
+			throw redirect(302, "/");
 		} else if (response.status === 401) {
-			const { errorMessage }: { errorMessage: string } = await response.json();
-			return fail(401, { username, password, errorMessage });
+			const { error }: { error: string } = await response.json();
+			return fail(401, { username, password, error });
 		} else {
 			return fail(response.status, {
-				errorMessage: "An error occurred. Please try again.",
+				error: "An error occurred. Please try again.",
 			});
 		}
 	},
