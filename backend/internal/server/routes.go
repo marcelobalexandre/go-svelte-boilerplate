@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -45,10 +46,10 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type User struct {
-	Id        int
-	Username  string
-	Password  string
-	DeletedAt *time.Time
+	Id           int
+	Username     string
+	PasswordHash string
+	DeletedAt    *time.Time
 }
 
 type SignupHandlerInput struct {
@@ -68,12 +69,17 @@ func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: Validate input.
 
 	now := time.Now().UTC()
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
 	_, err = s.db.Exec(
 		r.Context(),
 		"INSERT INTO users (username, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?)",
 		input.Username,
-		// TODO: Hash the password.
-		input.Password,
+		passwordHash,
 		now,
 		now,
 	)
@@ -103,10 +109,11 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var user User
 	err = s.db.QueryRow(r.Context(), "SELECT id, username, password_hash FROM users WHERE username = ?", input.Username).
-		Scan(&user.Id, &user.Username, &user.Password)
+		Scan(&user.Id, &user.Username, &user.PasswordHash)
 	if err == sql.ErrNoRows {
 		slog.Error(err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid username or password"})
 		return
 	} else if err != nil {
 		slog.Info(err.Error())
@@ -114,12 +121,15 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Check if user is deleted.
-	if input.Password != user.Password {
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password))
+	if err != nil {
+		slog.Error(err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid username or password"})
 		return
 	}
+
+	// TODO: Check if user is deleted.
 
 	token, err := generateToken(user.Id)
 	if err != nil {
