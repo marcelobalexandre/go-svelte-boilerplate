@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -153,10 +154,8 @@ func generateToken(userId int) (string, error) {
 		},
 	}
 
-	// TODO: Move to env variable.
-	secret := "super-secret-string"
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret := os.Getenv("SECRET")
 
 	return token.SignedString([]byte(secret))
 }
