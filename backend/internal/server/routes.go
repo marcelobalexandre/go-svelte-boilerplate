@@ -49,7 +49,6 @@ type User struct {
 	Id           int
 	Username     string
 	PasswordHash string
-	DeletedAt    *time.Time
 }
 
 type SignupHandlerInput struct {
@@ -108,7 +107,7 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user User
-	err = s.db.QueryRow(r.Context(), "SELECT id, username, password_hash FROM users WHERE username = ?", input.Username).
+	err = s.db.QueryRow(r.Context(), "SELECT id, username, password_hash FROM users WHERE username = ? AND deleted_at IS NULL", input.Username).
 		Scan(&user.Id, &user.Username, &user.PasswordHash)
 	if err == sql.ErrNoRows {
 		slog.Error(err.Error())
@@ -128,8 +127,6 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid username or password"})
 		return
 	}
-
-	// TODO: Check if user is deleted.
 
 	token, err := generateToken(user.Id)
 	if err != nil {
