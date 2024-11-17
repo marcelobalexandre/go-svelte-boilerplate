@@ -1,8 +1,9 @@
 import type { Actions } from "./$types";
 import { fail, redirect } from "@sveltejs/kit";
+import { makeFlasher } from "$lib/flasher";
 
 export const actions = {
-	default: async ({ fetch, request }) => {
+	default: async ({ cookies, fetch, request }) => {
 		const data = await request.formData();
 		const username = data.get("username");
 		const password = data.get("password");
@@ -14,6 +15,8 @@ export const actions = {
 		});
 
 		if (response.ok) {
+			const flasher = makeFlasher(cookies);
+			flasher.success("Account created succesfully!");
 			throw redirect(302, "/");
 		} else if (response.status === 422) {
 			const error: { message: string; details: Record<string, string> } =

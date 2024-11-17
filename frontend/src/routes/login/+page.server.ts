@@ -1,5 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit";
 import type { Actions } from "./$types";
+import { makeFlasher } from "$lib/flasher";
 
 export const actions = {
 	default: async ({ cookies, fetch, request }) => {
@@ -16,6 +17,8 @@ export const actions = {
 		if (response.ok) {
 			const { token }: { token: string } = await response.json();
 			cookies.set("token", token, { path: "/" });
+			const flasher = makeFlasher(cookies);
+			flasher.success("Logged in successfully!");
 
 			throw redirect(302, "/");
 		} else if (response.status === 401) {
