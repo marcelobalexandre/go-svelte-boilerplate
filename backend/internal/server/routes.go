@@ -48,15 +48,15 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
+type User struct {
+	Id           int    `json:"id"`
+	Username     string `json:"username"`
+	PasswordHash string `json:"-"`
+}
+
 type ErrorOutput struct {
 	Message string              `json:"message"`
 	Details map[string][]string `json:"details"`
-}
-
-type User struct {
-	Id           int
-	Username     string
-	PasswordHash string
 }
 
 type SignupHandlerInput struct {
@@ -97,14 +97,15 @@ func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	_, err = s.db.Exec(
+	var user User
+	err = s.db.QueryRow(
 		r.Context(),
-		"INSERT INTO users (username, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?)",
+		"INSERT INTO users (username, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?) RETURNING id, username",
 		input.Username,
 		passwordHash,
 		now,
 		now,
-	)
+	).Scan(&user.Id, &user.Username)
 	if err != nil {
 		slog.Error(err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
@@ -112,7 +113,7 @@ func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	// TODO: Return the user.
+	json.NewEncoder(w).Encode(user)
 }
 
 type LoginHandlerInput struct {
