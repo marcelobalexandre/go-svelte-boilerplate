@@ -3,7 +3,7 @@
   import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
-  const inputColor = form?.error? 'red' : undefined;
+  const inputColor = form?.error ? 'red' : undefined;
 </script>
 
 <div class="flex items-center justify-center min-h-screen">
@@ -12,7 +12,7 @@
 
     {#if form?.error}
       <Alert color="red" rounded={false} class="mt-4 border-t-4 dark:bg-gray-700">
-        {form.error}
+        {form.error.message}
       </Alert>
     {/if}
       

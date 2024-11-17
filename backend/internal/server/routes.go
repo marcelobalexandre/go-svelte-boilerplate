@@ -7,8 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -46,6 +48,11 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
+type ErrorOutput struct {
+	Message string              `json:"message"`
+	Details map[string][]string `json:"details"`
+}
+
 type User struct {
 	Id           int
 	Username     string
@@ -53,8 +60,8 @@ type User struct {
 }
 
 type SignupHandlerInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required,lowercase"`
+	Password string `json:"password" validate:"required,gte=6"`
 }
 
 func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +73,22 @@ func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate input.
+	err = s.validate.Struct(input)
+	if err != nil {
+		output := ErrorOutput{
+			Message: "Validation error",
+			Details: make(map[string][]string),
+		}
+		errs := err.(validator.ValidationErrors)
+		for _, err := range errs {
+			field := strings.ToLower(err.Field())
+			output.Details[field] = append(output.Details[field], err.Translate(s.trans))
+		}
+
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(output)
+		return
+	}
 
 	now := time.Now().UTC()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
@@ -94,8 +116,8 @@ func (s *Server) signupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type LoginHandlerInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,13 +129,33 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = s.validate.Struct(input)
+	if err != nil {
+		output := ErrorOutput{
+			Message: "Validation error",
+			Details: make(map[string][]string),
+		}
+		errs := err.(validator.ValidationErrors)
+		for _, err := range errs {
+			field := strings.ToLower(err.Field())
+			output.Details[field] = append(output.Details[field], err.Translate(s.trans))
+		}
+
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(output)
+		return
+	}
+
 	var user User
 	err = s.db.QueryRow(r.Context(), "SELECT id, username, password_hash FROM users WHERE username = ? AND deleted_at IS NULL", input.Username).
 		Scan(&user.Id, &user.Username, &user.PasswordHash)
 	if err == sql.ErrNoRows {
 		slog.Error(err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid username or password"})
+		output := ErrorOutput{
+			Message: "Invalid username or password",
+		}
+		json.NewEncoder(w).Encode(output)
 		return
 	} else if err != nil {
 		slog.Info(err.Error())
@@ -125,7 +167,10 @@ func (s *Server) loginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error(err.Error())
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid username or password"})
+		output := ErrorOutput{
+			Message: "Invalid username or password",
+		}
+		json.NewEncoder(w).Encode(output)
 		return
 	}
 

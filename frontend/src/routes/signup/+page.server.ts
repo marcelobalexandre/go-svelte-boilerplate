@@ -16,12 +16,12 @@ export const actions = {
 		if (response.ok) {
 			throw redirect(302, "/");
 		} else if (response.status === 422) {
-			const { errors }: { errors: Record<string, string> } =
+			const error: { message: string; details: Record<string, string> } =
 				await response.json();
-			return fail(422, { username, password, errors });
+			return fail(422, { username, password, error });
 		} else {
 			return fail(response.status, {
-				error: "An error occurred. Please try again.",
+				error: { message: "An error occurred. Please try again." },
 			});
 		}
 	},

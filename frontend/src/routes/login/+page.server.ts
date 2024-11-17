@@ -19,11 +19,11 @@ export const actions = {
 
 			throw redirect(302, "/");
 		} else if (response.status === 401) {
-			const { error }: { error: string } = await response.json();
+			const error: { message: string } = await response.json();
 			return fail(401, { username, password, error });
 		} else {
 			return fail(response.status, {
-				error: "An error occurred. Please try again.",
+				error: { message: "An error occurred. Please try again." },
 			});
 		}
 	},

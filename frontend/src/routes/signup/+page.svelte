@@ -3,8 +3,8 @@
   import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
-  const usernameColor = form?.errors?.username ? 'red' : undefined;
-  const emailColor = form?.errors?.email? 'red' : undefined;
+  const usernameColor = form?.error?.details?.username ? 'red' : undefined;
+  const passwordColor = form?.error?.details?.password? 'red' : undefined;
 </script>
 
 <div class="flex items-center justify-center min-h-screen">
@@ -13,17 +13,17 @@
 
     <div class="mt-4">
       <Label for="username" color={usernameColor} class="block mb-2">Username</Label>
-      <Input type="text" id="username" name="username" value={form?.username ?? ''} required color={usernameColor} />
-      {#if form?.errors?.username}
-        <Helper class='mt-2' color='red'>{form.errors.username}</Helper>
+      <Input type="text" id="username" name="username" required value={form?.username ?? ''} color={usernameColor} />
+      {#if form?.error?.details?.username}
+        <Helper class='mt-2' color='red'>{form.error.details.username}</Helper>
       {/if}
     </div>
 
     <div class="mt-4">
-      <Label for="password" color={emailColor} class="block mb-2">Password</Label>
-      <Input type="password" id="password" name="password" value={form?.password ?? ''} required color={emailColor} />
-      {#if form?.errors?.email}
-        <Helper class='mt-2' color='red'>{form.errors.email}</Helper>
+      <Label for="password" color={passwordColor} class="block mb-2">Password</Label>
+      <Input type="password" id="password" name="password" required value={form?.password ?? ''} color={passwordColor} />
+      {#if form?.error?.details?.password}
+        <Helper class='mt-2' color='red'>{form.error.details.password}</Helper>
       {/if}
     </div>
 
