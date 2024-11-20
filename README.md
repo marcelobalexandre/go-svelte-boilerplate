@@ -96,11 +96,11 @@ dbin/dev
 
 ### Executing Bash Commands in the Backend Docker Container
 
-Run the bash command prefixed with dbin/backend, for example:
+Run the bash command prefixed with `dbin/backend`, for example:
 ```bash
 dbin/backend make db-generate-migration
 ```
-Check backend/README.md to find out more about the available commands.
+Check [`backend/README.md`](backend/README.md) to find out more about the available commands.
 
 ---
 
