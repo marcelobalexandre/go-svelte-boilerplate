@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Check if a command is provided
+if [ $# -eq 0 ]; then
+  echo "Usage: $0 <bash-command>"
+  exit 1
+fi
+
+# Run the make command inside the container
+docker compose run --rm backend "$@"
+
