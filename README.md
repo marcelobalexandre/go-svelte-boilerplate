@@ -9,10 +9,10 @@ This repository provides a boilerplate setup for building web applications with 
 ## Features
 
 - **Go Backend**:
-  A lightweight HTTP API built using the [Blueprint](https://go-blueprint.dev/) project.
+  A lightweight HTTP API built using the [Blueprint](https://go-blueprint.dev) project.
 
 - **SvelteKit Frontend**:
-  A frontend powered by [SvelteKit](https://kit.svelte.dev/).
+  A frontend powered by [SvelteKit](https://kit.svelte.dev).
 
 - **SQLite3 Database**:
   The boilerplate uses **SQLite3** for simple and lightweight data storage.
@@ -20,6 +20,7 @@ This repository provides a boilerplate setup for building web applications with 
     ```bash
     dbin/db-up
     ```
+  - Uses [goose](https://github.com/pressly/goose) to handle database migrations.
 
 - **Basic JWT Authentication**:
   Includes a simple implementation of **JWT-based authentication** to handle secure communication between the backend and frontend.
