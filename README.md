@@ -66,8 +66,10 @@ This repository provides a boilerplate setup for building web applications with 
 ## Requirements
 
 - Docker Compose
+
 or
-- **For running locally**
+
+- For running locally
   - Go (>= 1.23)
   - Node.js (>= 23.x)
 
@@ -91,6 +93,14 @@ dbin/dev
 
 - The backend API will be available at http://localhost:8080.
 - The frontend will be available at http://localhost:3000.
+
+### Executing Bash Commands in the Backend Docker Container
+
+Run the bash command prefixed with dbin/backend, for example:
+```bash
+dbin/backend make db-generate-migration
+```
+Check backend/README.md to find out more about the available commands.
 
 ---
 
