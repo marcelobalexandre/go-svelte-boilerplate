@@ -39,7 +39,8 @@ This repository provides a boilerplate setup for building web applications with 
 
 ## Project Structure
 
-go-svelte-boilerplate/
+```
+/
 ├── backend/               # Go API backend
 │   ├── cmd/api/main.go    # Entry point for the Go application
 │   ├── internal/database  # Database files
@@ -58,6 +59,7 @@ go-svelte-boilerplate/
 │   └── dev                # Command to start the entire app using Docker Compose
 │
 └── docker-compose.yml     # Docker setup for development
+```
 
 ---
 
