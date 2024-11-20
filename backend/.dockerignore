@@ -1,0 +1,49 @@
+# Exclude Go modules cache (this is re-downloaded in the container)
+**/vendor/*
+**/node_modules/*
+**/.modules/
+
+# Exclude build artifacts
+main
+bin/
+build/
+out/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Exclude IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Exclude Go-related cache files
+*.log
+*.cache
+*.tmp
+*.bak
+*.obj
+*.out
+
+# Exclude test-related files
+*.test
+testdata/
+
+# Exclude Docker and Kubernetes related files that aren’t needed at runtime
+.dockerignore
+Dockerfile
+*.yaml
+*.yml
+
+# Exclude git-related files
+.git/
+.gitignore
+
+# Exclude environment and config files
+.env.example

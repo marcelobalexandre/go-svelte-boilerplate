@@ -25,7 +25,7 @@ make run
 
 Live reload the application:
 ```bash
-make watch
+make dev 
 ```
 
 Run the test suite:
