@@ -3,7 +3,6 @@ package user
 import (
 	"backend/internal/modules"
 	"context"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -43,7 +42,6 @@ func NewCreateUser(
 		now := time.Now().UTC()
 		passwordHash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 		if err != nil {
-			slog.Error(err.Error())
 			return nil, err
 		}
 
@@ -55,7 +53,6 @@ func NewCreateUser(
 		}
 		user, err = userRepo.Store(ctx, user)
 		if err != nil {
-			slog.Error(err.Error())
 			return nil, err
 		}
 
