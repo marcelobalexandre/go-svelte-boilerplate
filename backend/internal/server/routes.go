@@ -20,6 +20,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.HandleFunc("/health", ensureAuthenticated(s.healthHandler))
 
 	mux.HandleFunc("/ws", ensureAuthenticated(s.wsHandler))
+	mux.HandleFunc("/sse", s.sseHandler)
 
 	mux.HandleFunc("/api/signup", s.signupHandler)
 	mux.HandleFunc("/api/login", s.loginHandler)
@@ -79,6 +80,35 @@ func (s *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		for _, clientConn := range clients {
 			clientConn.WriteMessage(messageType, p)
+		}
+	}
+}
+
+func (s *Server) sseHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	clientDisconnected := r.Context().Done()
+
+	rc := http.NewResponseController(w)
+	t := time.NewTicker(time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-clientDisconnected:
+			fmt.Println("Client disconnected")
+			return
+		case <-t.C:
+			_, err := fmt.Fprintf(w, "data: Time is %s\n\n", time.Now().Format(time.UnixDate))
+			if err != nil {
+				return
+			}
+			if err = rc.Flush(); err != nil {
+				return
+			}
 		}
 	}
 }

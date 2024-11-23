@@ -1,6 +1,12 @@
 <script>
   import { onMount } from 'svelte';
 
+  const eventSource = new EventSource("http://localhost:8080/sse")
+
+  eventSource.onmessage = (event) => {
+    console.log(event.data)
+  }
+
   const socket = new WebSocket('ws://localhost:8080/ws')
   socket.onopen = (event) => {
     console.log('Connected')
