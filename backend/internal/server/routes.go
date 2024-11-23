@@ -3,15 +3,18 @@ package server
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,7 +22,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.HelloWorldHandler)
 
-	mux.HandleFunc("/health", s.healthHandler)
+	mux.HandleFunc("/health", ensureAuthenticated(s.healthHandler))
+
+	mux.HandleFunc("/ws", ensureAuthenticated(s.wsHandler))
 
 	mux.HandleFunc("/api/signup", s.signupHandler)
 	mux.HandleFunc("/api/login", s.loginHandler)
@@ -45,7 +50,42 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("error handling JSON marshal. Err: %v", err)
 	}
 
+	fmt.Println("User ID", r.Header.Get("x-user-id"))
+
 	_, _ = w.Write(jsonResp)
+}
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+var clients = make(map[int]*websocket.Conn)
+
+func (s *Server) wsHandler(w http.ResponseWriter, r *http.Request) {
+	conn, _ := upgrader.Upgrade(w, r, nil)
+
+	userId, _ := strconv.Atoi(r.Header.Get("x-user-id"))
+	clients[userId] = conn
+
+	defer delete(clients, userId)
+	defer conn.Close()
+
+	for {
+		messageType, p, err := conn.ReadMessage()
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Println("Message", string(p))
+
+		for _, clientConn := range clients {
+			clientConn.WriteMessage(messageType, p)
+		}
+	}
 }
 
 type User struct {
@@ -201,7 +241,45 @@ func generateToken(userId int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("SECRET")
+	secret := os.Getenv("PASSWORD_SECRET")
 
 	return token.SignedString([]byte(secret))
+}
+
+func ensureAuthenticated(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("token")
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// authHeader := r.Header.Get("Authorization")
+		// bearerToken := strings.Split(authHeader, " ")
+		// if len(bearerToken) != 2 {
+		// 	w.WriteHeader(http.StatusUnauthorized)
+		// 	return
+		// }
+
+		token, err := jwt.Parse(cookie.Value, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+			}
+			return []byte(os.Getenv("PASSWORD_SECRET")), nil
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok && !token.Valid {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		r.Header.Set("x-user-id", strconv.Itoa(int(claims["userId"].(float64))))
+
+		next(w, r)
+	}
 }
